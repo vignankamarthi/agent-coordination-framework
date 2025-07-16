@@ -13,10 +13,10 @@ VECTOR_DB = os.path.join(DATA_DIR, "vector_db")
 
 neo4j_uri = "neo4j+s://2b228b65.databases.neo4j.io"
 neo4j_user = "neo4j"
-neo4j_password = "REDACTED_NEO4J_PASSWORD"
-cohere_api_key = "REDACTED_COHERE_KEY"
+neo4j_password = "<neo4j-db-password>"
+cohere_api_key = "<cohere-api-key>"
 cohere_model = "embed-english-v3.0"
-tavily_api_key = "REDACTED_TAVILY_KEY"
+tavily_api_key = "<tavily-api-key>"
 
 # Embedding & Splitter
 EMBED_MODEL   = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
