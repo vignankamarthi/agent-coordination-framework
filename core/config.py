@@ -1,6 +1,9 @@
 import os
 import sys
-from langchain_community.embeddings import HuggingFaceEmbeddings
+try:
+    from langchain_huggingface import HuggingFaceEmbeddings
+except ImportError:
+    from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
@@ -18,7 +21,7 @@ PAPERS_DIR = os.path.join(DATA_DIR, "papers")
 # Database configuration from environment variables
 try:
     MYSQL_HOST = os.getenv('MYSQL_HOST', 'localhost')
-    MYSQL_DATABASE = os.getenv('MYSQL_DATABASE', 'course_recommendation')
+    MYSQL_DATABASE = os.getenv('MYSQL_DATABASE', 'IMPEL_courses')
     MYSQL_USER = os.getenv('MYSQL_USER', 'root')
     MYSQL_PASSWORD = os.getenv('MYSQL_PASSWORD', 'rootpassword')
     
@@ -118,7 +121,7 @@ try:
     
     # LangSmith configuration - MANDATORY for system observability
     langsmith_api_key = os.getenv('LANGSMITH_API_KEY')
-    langchain_project = os.getenv('LANGCHAIN_PROJECT', 'course-recommendation-system')
+    langchain_project = os.getenv('LANGCHAIN_PROJECT', 'IMPEL')
     # Initialize client variable for module-level access
     langsmith_client = None
     

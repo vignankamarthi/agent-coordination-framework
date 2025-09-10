@@ -44,79 +44,60 @@ By generating user vectors from profile data and finding similar learners, this 
 ### Prerequisites
 
 - Docker and Docker Compose
-- Python 3.9+ (for local development)
 
-### 1. Container Setup
+### 1. Configuration
 
-Clone the repository and build the Docker environment:
+First, clone the repository and set up your API keys:
 
 ```bash
 git clone <repository-url>
-cd course-recommendation-system
-
-# Start containers
-docker-compose up -d
-
-# Verify containers are running
-docker-compose ps
+cd course-recommendation-system/docker
 ```
 
-This creates MySQL and Neo4j containers with persistent data volumes.
-
-### 2. Local Development Environment
-
-Create a virtual environment for IDE support and remaining dependencies:
+Create your environment configuration file from the example:
 
 ```bash
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
+cp .env.example .env
 ```
 
-### 3. Configuration
-
-Create your environment configuration file:
-
-```bash
-touch .env
-```
-
-Add the following configuration variables to your `.env` file:
+Edit the `.env` file to add your API keys and credentials:
 
 **Required API Keys:**
-```bash
-COHERE_API_KEY=your_cohere_api_key_here
-TAVILY_API_KEY=your_tavily_api_key_here
-```
+- `COHERE_API_KEY` - Your Cohere API key
+- `TAVILY_API_KEY` - Your Tavily API key
+- `OPENAI_API_KEY` - Your OpenAI API key (required for LangSmith integration)
+- `LANGSMITH_API_KEY` - Your LangSmith API key for tracing and observability
 
-**Optional Database Settings** (uses defaults if not specified):
-```bash
-# MySQL Database
-MYSQL_HOST=localhost
-MYSQL_PASSWORD=your_mysql_password
-MYSQL_DATABASE=course_recommendation
+**Neo4j Database Access:**
+- `NEO4J_PASSWORD` - **Contact repository creators for credentials** to access the full course and user dataset
+- Default password provided works but has no data
 
-# Neo4j Graph Database  
-NEO4J_PASSWORD=your_neo4j_password
-NEO4J_URI=bolt://localhost:7687
-```
+**Optional Settings:**
+- MySQL configuration (defaults work automatically)
 
 Get your API keys from:
-- **Cohere**: [dashboard.cohere.ai/api-keys](https://dashboard.cohere.ai/api-keys) for AI/LLM functionality
+- **Cohere**: [dashboard.cohere.ai/api-keys](https://dashboard.cohere.ai/api-keys) for AI/LLM tools/functions. 
 - **Tavily**: [app.tavily.com](https://app.tavily.com) for web search capabilities
+- **OpenAI**: [platform.openai.com/api-keys](https://platform.openai.com/api-keys) for LangSmith integration
+- **LangSmith**: [smith.langchain.com](https://smith.langchain.com) for tracing and debugging
 
-### 4. Run the Application
+### 2. Start the Application
+
+Once your `.env` file is configured, start the entire application using Docker Compose:
 
 ```bash
-python app.py
+# Start all containers (MySQL, Neo4j, and the application)
+docker compose up
+
+# In another terminal, verify all containers are running
+docker compose ps
 ```
 
-### 5. Access Web Interfaces
+**Important:** Run without `-d` flag to see real-time logs in your terminal. This is essential for development and debugging. Use a separate terminal tab for other commands. See the [Logging System](#logging-system) section for more details about logs.
+
+**Note:** Docker handles ALL dependencies automatically - no local Python installation or virtual environment needed. The application container includes all required Python packages.
+
+### 3. Access Web Interfaces
 
 Once running, you can access these web-based services:
 
@@ -132,13 +113,21 @@ Once running, you can access these web-based services:
 
 The project includes Model Context Protocol integration for LangSmith development tools. This provides direct access to dataset management, evaluation testing, and debugging traces through Claude Desktop during development.
 
-**Quick Setup**: Add `LANGSMITH_API_KEY` to your `.env` file and configure Claude Desktop with the MCP server settings.
+**Setup**:
+1. Ensure your `LANGSMITH_API_KEY` is configured in `docker/.env`
+2. Source the MCP environment setup script:
+   ```bash
+   source .mcp/setup-mcp.sh
+   ```
+   This script automatically pulls the LangSmith API key from your Docker environment file, maintaining a single source of truth.
 
-**Detailed Documentation**: See [.mcp/README.md](.mcp/README.md) for complete setup instructions, available tools, and usage examples.
+3. Configure Claude Desktop with the MCP server settings (see [.mcp/README.md](.mcp/README.md))
+
+**Detailed Documentation**: See [.mcp/README.md](.mcp/README.md) for complete MCP tools documentation and usage examples.
 
 ### Logging System
 
-The system implements a comprehensive logging structure via `SystemLogger`:
+The system implements a comprehensive logging structure via `SystemLogger`. Logs are printed to the console output of the Docker container, making them available in real-time when running the container in attached mode (without detached mode).
 
 ```python
 from utils.logger import SystemLogger
@@ -180,7 +169,7 @@ The system integrates LangSmith for comprehensive tracing and debugging across a
 ```python
 # Automatic tracing of agent workflows and LLM calls
 LANGSMITH_API_KEY=your-langsmith-api-key-here
-LANGCHAIN_PROJECT=course-recommendation-system
+LANGCHAIN_PROJECT=IMPEL
 ```
 
 **Traced Components**: Intent classification, multi-agent workflows (Database, Collaborative, Content), LLM interactions, similarity searches, and state transitions.

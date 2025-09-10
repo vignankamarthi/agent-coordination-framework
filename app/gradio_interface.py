@@ -332,10 +332,9 @@ def create_gradio_interface():
                         info="Describe what you want to learn or achieve"
                     )
                     file_upload = gr.File(
-                        label="Upload Resume (PDF or DOCX)", 
+                        label="Optionally Upload Resume (PDF or DOCX)", 
                         file_types=[".pdf", ".docx"], 
-                        type="filepath",
-                        info="Optional: Upload your resume for personalized recommendations"
+                        type="filepath"
                     )
                 
                 submit_button = gr.Button("Get Recommendations", variant="primary")
@@ -344,10 +343,10 @@ def create_gradio_interface():
                 
                 execution_tag = gr.Markdown("")  # Top status message
                 
-                db_output = gr.Textbox(label="IMPEL Courses and Modules Info", visible=False)
-                cont_output = gr.Textbox(label="Content-based Recommendations", visible=False)
-                collab_output = gr.Textbox(label="Collaborative Filtering Recommendations", visible=False)
-                similar_output = gr.Textbox(label="Similar Users Enrolled In", visible=False)
+                db_output = gr.Markdown(label="IMPEL Courses and Modules Info", visible=False)
+                cont_output = gr.Markdown(label="Content-based Recommendations", visible=False)
+                collab_output = gr.Markdown(label="Collaborative Filtering Recommendations", visible=False)
+                similar_output = gr.Markdown(label="Similar Users Enrolled In", visible=False)
                 
             except Exception as component_error:
                 SystemLogger.error(
@@ -424,7 +423,13 @@ def create_gradio_interface():
                 'interface_components': ['user_id', 'education', 'age_group', 'profession', 'query', 'file_upload']
             })
             
-            demo.launch(debug=True)
+            demo.launch(
+                debug=True,
+                server_name="0.0.0.0",
+                server_port=7860,
+                share=False,
+                show_error=True
+            )
             
         except Exception as launch_error:
             SystemLogger.error(

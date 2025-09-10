@@ -4,6 +4,10 @@
 -- PURPOSE: Course catalog storage (static data)
 -- NOTE: User enrollments handled by Neo4j graph database
 
+-- Create database if it doesn't exist
+CREATE DATABASE IF NOT EXISTS IMPEL_courses;
+USE IMPEL_courses;
+
 -- Drop tables if they exist (for fresh setup)
 DROP TABLE IF EXISTS modules;
 DROP TABLE IF EXISTS courses;

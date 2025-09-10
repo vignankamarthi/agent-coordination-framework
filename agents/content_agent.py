@@ -225,8 +225,8 @@ class ContentAgent:
             )
             raise AgentExecutionError(f"Query classification failed: {fallback_error}")
 
-    @traceable(run_type="agent", name="content_agent_analysis")
-    @traceable(run_type="agent", name="content_agent_execution")
+    @traceable(run_type="chain", name="content_agent_analysis")
+    @traceable(run_type="chain", name="content_agent_execution")
     def run(self, query: str, uploaded_files: List[str] = []) -> str:
         """
         Execute comprehensive content analysis and recommendation generation.

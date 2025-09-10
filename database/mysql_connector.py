@@ -19,7 +19,7 @@ class MySQLConnector:
     
     def __init__(self, 
                  host: str = "localhost",
-                 database: str = "course_recommendation", 
+                 database: str = "IMPEL_courses", 
                  user: str = "root",
                  password: str = "",
                  pool_name: str = "course_pool",
@@ -32,7 +32,7 @@ class MySQLConnector:
         host : str, optional
             MySQL server host, by default "localhost"
         database : str, optional 
-            Database name, by default "course_recommendation"
+            Database name, by default "IMPEL_courses"
         user : str, optional
             MySQL username, by default "root"
         password : str, optional

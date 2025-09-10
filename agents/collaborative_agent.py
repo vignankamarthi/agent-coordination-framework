@@ -170,7 +170,7 @@ class CollaborativeAgent:
             )
             raise DatabaseQueryError(f"Failed to load course data: {e}")
 
-    @traceable(run_type="agent", name="collaborative_agent_recommendations")
+    @traceable(run_type="chain", name="collaborative_agent_recommendations")
     def generate_recommendations(self, query: str, user_context: dict) -> dict:
         """
         Generate collaborative filtering recommendations based on similar users.

@@ -93,10 +93,14 @@ def web_search(query: str, api_key: str, top_k: int = 5) -> List[Dict[str, Any]]
             })
             return []
         
-        # Validate result structure
-        if not isinstance(results, list):
+        # Handle both old and new Tavily API response formats
+        if isinstance(results, dict) and 'results' in results:
+            # New API format: extract results from dictionary
+            SystemLogger.debug("Processing Tavily API dictionary format")
+            results = results['results']
+        elif not isinstance(results, list):
             SystemLogger.error(
-                "Tavily API returned unexpected result format - Expected list",
+                "Tavily API returned unexpected result format - Expected list or dict with 'results' key",
                 context={
                     'query': query,
                     'result_type': type(results).__name__,

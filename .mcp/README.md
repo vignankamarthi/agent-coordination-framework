@@ -11,10 +11,12 @@ Model Context Protocol integration providing LangSmith tools for **Claude Code C
 
 1. **Environment Configuration**
    
-   Add your LangSmith API key to the project's `.env` file:
+   The LangSmith API key should already be configured in `docker/.env`. To make it available for MCP tools, run:
    ```bash
-   LANGSMITH_API_KEY=ls_your-api-key-here
+   source .mcp/setup-mcp.sh
    ```
+   
+   This script automatically sources the API key from your Docker environment file, preventing duplicate configuration depenedencies.
 
 2. **Claude Desktop Integration**
    

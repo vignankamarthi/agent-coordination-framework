@@ -309,7 +309,7 @@ Only reply with one of the following words: "database_lookup", "recommendation",
             )
             raise WorkflowError(f"User data collection failed: {e}")
 
-    @traceable(run_type="agent", name="generate_collaborative_recommendations")
+    @traceable(run_type="chain", name="generate_collaborative_recommendations")
     def generate_recommendations(self, state):
         """Delegate to CollaborativeAgent for recommendations."""
         SystemLogger.debug("Generating collaborative recommendations", {
@@ -384,7 +384,7 @@ Only reply with one of the following words: "database_lookup", "recommendation",
             )
             raise WorkflowError(f"Recommendation generation failed: {e}")
 
-    @traceable(run_type="agent", name="run_database_lookup_agent")
+    @traceable(run_type="chain", name="run_database_lookup_agent")
     def run_database_agent(self, state):
         """Delegate to DatabaseAgent for course lookups."""
         SystemLogger.debug("Running DatabaseAgent for course lookup", {
@@ -460,7 +460,7 @@ Only reply with one of the following words: "database_lookup", "recommendation",
             )
             raise WorkflowError(f"Database agent execution failed: {e}")
 
-    @traceable(run_type="agent", name="run_content_analysis_agent")
+    @traceable(run_type="chain", name="run_content_analysis_agent")
     def run_content_agent(self, state):
         """Delegate to ContentAgent for content-based recommendations and market analysis."""
         SystemLogger.debug("Running ContentAgent for content analysis", {

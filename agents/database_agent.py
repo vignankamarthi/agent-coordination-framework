@@ -169,7 +169,7 @@ class DatabaseAgent:
             )
             raise DatabaseQueryError(f"Failed to load course data: {e}")
 
-    @traceable(run_type="agent", name="database_agent_lookup")
+    @traceable(run_type="chain", name="database_agent_lookup")
     def lookup_courses(self, query: str, user_context: dict) -> dict:
         """
         Handle direct course/module lookup queries.
