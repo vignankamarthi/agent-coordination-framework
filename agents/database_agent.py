@@ -270,17 +270,17 @@ Format:
 - <Module>: <Summary>
 """
                 
-                response = self.cohere_client.generate(
+                response = self.cohere_client.chat(
                     model=COHERE_GENERATE_MODEL,
-                    prompt=prompt,
+                    message=prompt,
                     max_tokens=2000,
                     temperature=0.3
                 )
                 
-                if not response or not response.generations or not response.generations[0]:
+                if not response or not response.text:
                     raise APIRequestError("Cohere API returned empty response")
                     
-                return response.generations[0].text.strip()
+                return response.text.strip()
             
             generated_text = _generate_course_lookup_response(query, self.impel_data)
             

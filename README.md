@@ -7,7 +7,7 @@ An AI-powered recommendation system designed for the Northeastern University com
 The system implements a multi-agent architecture that intelligently routes user queries through specialized recommendation engines based on intent classification. Each query is processed through one of three distinct pathways, ensuring optimal recommendation quality and relevance.
 
 ### AI Engineering Pipeline
-
+ 
 The core architecture employs LangGraph for orchestration, managing workflow state and routing user queries to appropriate specialized agents:
 
 ![AI Engineering Pipeline](docs/flow_diagrams/AI_Engineering_Pipeline.png)
@@ -20,7 +20,7 @@ For queries about trending skills, job market insights, and research-backed reco
 
 ![Content-Based Recommendation Agent](docs/flow_diagrams/Content_Agent_Flow.png)
 
-This agent processes uploaded resumes, performs web searches via Tavily for real-time market data, and utilizes a research paper vector store to provide evidence-based course recommendations with robust academic context.
+This agent processes uploaded resumes through PyMuPDF and docx2txt parsers, performs web searches via Tavily for real-time market data, and queries a FAISS vector store containing 15 academic research papers to provide evidence-based course recommendations with robust academic context.
 
 ### Collaborative Filtering Engine
 
@@ -28,15 +28,15 @@ For personalized learning path recommendations, the Collaborative Agent analyzes
 
 ![Collaborative Filtering-Based Recommendation Agent](docs/flow_diagrams/Collaborative_Filtering_Agent_Flow.jpg)
 
-By generating user vectors from profile data and finding similar learners, this engine recommends courses based on successful learning patterns of users with similar backgrounds and goals.
+By generating 1024-dimensional user vectors from profile data (educational background, age, professional status) and finding similar learners through graph traversal, this engine recommends courses based on successful learning patterns of users with similar backgrounds and goals.
 
 ## Key Features
 
 - **Intent-Aware Routing**: Intelligent query classification directs users to the most appropriate recommendation agent
-- **Multi-Modal Input Processing**: Supports resume analysis (PDF/DOCX) alongside natural language queries
+- **Multi-Modal Input Processing**: Advanced resume parsing (PDF/DOCX formats) using PyMuPDF and docx2txt, combined with natural language query processing for comprehensive user context analysis
 - **Real-Time Market Intelligence**: Integration with Tavily API for current job trends and skill demands
-- **Research-Backed Recommendations**: Vector store of academic papers provides evidence-based course suggestions
-- **Collaborative Intelligence**: Neo4j-powered user similarity matching for personalized learning paths
+- **Research-Backed Recommendations**: FAISS vector store containing 15 curated academic research papers provides evidence-based course suggestions grounded in educational literature
+- **Collaborative Intelligence**: Neo4j graph database enables user similarity matching and peer-based learning path recommendations
 - **Comprehensive Logging**: Structured logging with error handling for production-ready deployment
 
 ## Getting Started
@@ -179,8 +179,8 @@ LANGCHAIN_PROJECT=IMPEL
 ## Architecture Details
 
 - **Orchestrator**: LangGraph-based workflow management with state persistence
-- **Database Layer**: MySQL for course data, Neo4j for user interactions and similarity graphs
-- **Vector Stores**: FAISS for course similarity, research paper retrieval
+- **Database Layer**: MySQL for IMPEL course catalog, Neo4j graph database for user interactions and collaborative filtering
+- **Vector Stores**: FAISS for course embeddings and academic research paper retrieval (15 papers)
 - **LLM Integration**: Cohere for intent classification and response generation
 - **Web Interface**: Gradio for user interaction with file upload support
 
@@ -216,7 +216,7 @@ Deep system optimization using LangSmith trace analysis:
 Extend the current LangSmith MCP documentation server to include application-level integrations:
 
 - **Course Recommendation Tools**: Develop MCP servers providing direct access to course search, recommendation generation, and user interaction data for AI assistant integration
-- **Multi-Agent System Access**: Create MCP tools for DatabaseAgent, CollaborativeAgent, and ContentAgent workflows, enabling Claude's CLI to utilize the recommendation pipeline for efficeient, iterative development workflow structures
+- **Multi-Agent System Access**: Create MCP tools for DatabaseAgent, CollaborativeAgent, and ContentAgent workflows, enabling Claude's CLI to utilize the recommendation pipeline for efficeienPlease ask clarifying questions until you are at least 95% confident with the task.  t, iterative development workflow structures
 - **Developer Productivity**: Implement MCP servers for system debugging, evaluation dataset creation, and performance monitoring to enable iterative development workflows
 
 ## License

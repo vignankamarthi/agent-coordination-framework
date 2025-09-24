@@ -31,9 +31,8 @@ def _finalize_langsmith_traces():
             wait_for_all_tracers()
             SystemLogger.debug("LangSmith traces finalized successfully")
         except Exception as e:
-            SystemLogger.warning(
+            SystemLogger.info(
                 "Failed to finalize LangSmith traces - Some traces may be incomplete",
-                exception=e,
                 context={'wait_available': LANGSMITH_WAIT_AVAILABLE}
             )
     else:
@@ -191,21 +190,21 @@ Only reply with one of the following words: "database_lookup", "recommendation",
 """
 
             SystemLogger.debug("Invoking Cohere for intent classification")
-            response = self.cohere_client.generate(
+            response = self.cohere_client.chat(
                 model=COHERE_GENERATE_MODEL,
-                prompt=prompt,
+                message=prompt,
                 max_tokens=5,
                 temperature=0
             )
 
-            if not response or not response.generations or not response.generations[0]:
+            if not response or not response.text:
                 SystemLogger.error(
                     "Cohere returned empty response for intent classification",
                     context={'query': query, 'model': COHERE_GENERATE_MODEL}
                 )
                 raise APIRequestError("Cohere returned empty response")
 
-            intent = response.generations[0].text.strip().lower()
+            intent = response.text.strip().lower().strip('"\'')  # Remove quotes if present
 
             # Validate intent is one of expected values
             valid_intents = ['database_lookup', 'recommendation', 'content_analysis', 'irrelevant']

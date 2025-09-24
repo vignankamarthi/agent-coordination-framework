@@ -351,16 +351,16 @@ Format:
             @traceable(run_type="llm", name="cohere_collaborative_recommendations")
             def _generate_collaborative_recommendations(recommendation_prompt: str, prefix: str) -> str:
                 """Generate collaborative recommendations using Cohere with LangSmith tracing."""
-                llm_response = self.cohere_client.generate(
+                llm_response = self.cohere_client.chat(
                     model=COHERE_GENERATE_MODEL,
-                    prompt=recommendation_prompt,
+                    message=recommendation_prompt,
                     max_tokens=400
                 )
                 
-                if not llm_response or not llm_response.generations or not llm_response.generations[0]:
+                if not llm_response or not llm_response.text:
                     raise APIRequestError("Cohere API returned empty response")
                 
-                generated_text = llm_response.generations[0].text.strip()
+                generated_text = llm_response.text.strip()
                 if not generated_text:
                     raise APIRequestError("Cohere API returned empty text")
                 

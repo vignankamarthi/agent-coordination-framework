@@ -100,7 +100,7 @@ class Neo4jConnector:
         SystemLogger.debug("Storing user interaction in Neo4j", {
             'user_id': user_id, 'education': education, 'age_group': age_group, 'profession': profession
         })
-        
+
         try:
             with self.driver.session() as session:
                 session.execute_write(
@@ -226,19 +226,17 @@ class Neo4jConnector:
             raise APIRequestError(f"Failed to generate user vector: {e}")
 
     def get_similar_users(self, user_vector, top_n=5):
-        SystemLogger.debug("Computing user similarity vectors", {
+        SystemLogger.info("Computing user similarity vectors for collaborative filtering", {
             'top_n': top_n, 'input_vector_dimension': len(user_vector) if user_vector else 0
         })
-        
+
         try:
             all_users = self.get_all_user_vectors()
             if not all_users:
                 SystemLogger.info("No existing user vectors found in Neo4j database")
                 return []
-                
-            SystemLogger.debug(f"Retrieved user vectors for similarity computation", {
-                'total_users': len(all_users)
-            })
+
+            SystemLogger.info(f"Retrieved {len(all_users)} users with interaction vectors for similarity computation")
             
             similarities = []
             failed_computations = 0
@@ -268,13 +266,17 @@ class Neo4jConnector:
 
             similarities.sort(key=lambda x: x["score"], reverse=True)
             result = similarities[:top_n]
-            
-            SystemLogger.info("User similarity computation completed", {
-                'total_computed': len(similarities),
-                'returned_count': len(result),
-                'top_score': result[0]['score'] if result else 0
-            })
-            
+
+            if result:
+                similar_user_ids = [user['user_id'] for user in result]
+                SystemLogger.info(f"Found {len(result)} similar users for collaborative recommendations", {
+                    'similar_user_ids': similar_user_ids,
+                    'similarity_scores': [round(user['score'], 3) for user in result],
+                    'total_computed': len(similarities)
+                })
+            else:
+                SystemLogger.info("No similar users found - will use general recommendations")
+
             return result
             
         except Exception as e:
@@ -297,18 +299,177 @@ class Neo4jConnector:
         """, {"query": query})
         return [record["response"] for record in result]
 
-    def get_enrolled_courses_from_similar_users(self, user_ids ):
+    def get_enrolled_courses_from_similar_users(self, user_ids):
+        SystemLogger.info(f"Searching for enrolled courses from similar users: {user_ids}")
+
         with self.driver.session() as session:
-            return session.execute_read(self._get_enrolled_courses_from_similar_users, user_ids)
+            enrolled_courses = session.execute_read(self._get_enrolled_courses_from_similar_users, user_ids)
+
+            if enrolled_courses:
+                SystemLogger.info(f"Found {len(enrolled_courses)} courses from similar users' enrollments: {enrolled_courses}")
+            else:
+                SystemLogger.info(f"No enrolled courses found for similar users {user_ids}")
+
+            return enrolled_courses
 
     @staticmethod
     def _get_enrolled_courses_from_similar_users(tx, user_ids):
-      query = """
+        query = """
         MATCH (u:User)-[:ENROLLED_IN]->(c:Course)
         WHERE u.id IN $user_ids
         RETURN DISTINCT c.name AS course
-     """
-      result = tx.run(query, user_ids=user_ids)
-      return [record["course"] for record in result]
+        """
+        result = tx.run(query, user_ids=user_ids)
+        return [record["course"] for record in result]
+
+    def initialize_course_data(self, mysql_connector):
+        """
+        Initialize Neo4j with course data from MySQL.
+        Creates Course nodes and sample user enrollments.
+        """
+        try:
+            SystemLogger.info("Starting Neo4j course data initialization")
+
+            # Get course data from MySQL
+            courses = mysql_connector.get_courses()
+            SystemLogger.info(f"Retrieved {len(courses)} course records from MySQL")
+
+            # Log sample data structure
+            if courses:
+                SystemLogger.debug(f"Sample course data structure: {courses[0]}")
+                SystemLogger.debug(f"Available fields: {list(courses[0].keys())}")
+
+            with self.driver.session() as session:
+                # First, create Course nodes from unique course names
+                unique_courses = {}
+                for course in courses:
+                    course_name = course.get('course_name', 'Unknown')
+                    if course_name not in unique_courses:
+                        unique_courses[course_name] = {
+                            'name': course_name,
+                            'description': course.get('module_summary', '')[:200]  # Use first module summary as description
+                        }
+
+                SystemLogger.info(f"Identified {len(unique_courses)} unique courses to create")
+                SystemLogger.debug(f"Unique course names: {list(unique_courses.keys())}")
+
+                # Create Course nodes
+                courses_created = 0
+                for course_name, course_data in unique_courses.items():
+                    result = session.run("""
+                        MERGE (c:Course {name: $course_name})
+                        SET c.description = $description
+                        RETURN c.name as name
+                    """, {
+                        "course_name": course_data['name'],
+                        "description": course_data['description']
+                    })
+                    record = result.single()
+                    if record:
+                        courses_created += 1
+                        SystemLogger.debug(f"Created/Updated Course node: {record['name']}")
+                    else:
+                        SystemLogger.error(f"Failed to create Course node: {course_name}")
+
+                SystemLogger.info(f"Successfully created {courses_created} Course nodes")
+
+                # Get actual course names for sample enrollments
+                actual_course_names = [course.get('course_name', '') for course in courses if course.get('course_name')]
+                # Get unique course names only
+                actual_course_names = list(set(actual_course_names))
+                SystemLogger.info(f"Preparing to create sample enrollments with {len(actual_course_names)} unique courses")
+                SystemLogger.debug(f"Available course names for enrollment: {actual_course_names}")
+                sample_enrollments = []
+
+                # Create sample user enrollments using actual course names
+                if len(actual_course_names) >= 2:
+                    SystemLogger.info(f"Creating sample enrollments (have {len(actual_course_names)} courses, need at least 2)")
+                    sample_enrollments = [
+                        {"user_id": "student_001", "education": "Undergraduate",
+                         "courses": actual_course_names[:2]},  # First 2 courses
+                        {"user_id": "student_002", "education": "Graduate",
+                         "courses": actual_course_names[2:4] if len(actual_course_names) > 3 else actual_course_names[:2]},
+                        {"user_id": "student_003", "education": "PhD",
+                         "courses": actual_course_names[4:6] if len(actual_course_names) > 5 else actual_course_names[:2]},
+                        {"user_id": "professional_001", "education": "Graduate",
+                         "courses": actual_course_names[6:8] if len(actual_course_names) > 7 else actual_course_names[:2]},
+                        {"user_id": "professional_002", "education": "Undergraduate",
+                         "courses": actual_course_names[:2]}  # Same as student_001
+                    ]
+
+                    SystemLogger.info(f"Creating sample enrollments for {len(sample_enrollments)} users")
+
+                    users_created = 0
+                    enrollments_created = 0
+
+                    for enrollment in sample_enrollments:
+                        user_id = enrollment["user_id"]
+                        user_courses = enrollment["courses"]
+
+                        # Create user if not exists
+                        user_result = session.run("""
+                            MERGE (u:User {id: $user_id})
+                            SET u.education = $education
+                            RETURN u.id as id
+                        """, {
+                            "user_id": user_id,
+                            "education": enrollment["education"]
+                        })
+
+                        user_record = user_result.single()
+                        if user_record:
+                            users_created += 1
+
+                        # Create enrollment relationships
+                        for course_name in user_courses:
+                            enrollment_result = session.run("""
+                                MATCH (u:User {id: $user_id})
+                                MATCH (c:Course {name: $course_name})
+                                MERGE (u)-[:ENROLLED_IN]->(c)
+                                RETURN u.id as user, c.name as course
+                            """, {
+                                "user_id": user_id,
+                                "course_name": course_name
+                            })
+
+                            enrollment_record = enrollment_result.single()
+                            if enrollment_record:
+                                enrollments_created += 1
+
+                    SystemLogger.info(f"Created {users_created} sample users with {enrollments_created} course enrollments")
+
+                else:
+                    SystemLogger.info(f"Skipping enrollment creation - only {len(actual_course_names)} courses available (need at least 2)")
+
+                # Final validation - check what's actually in the graph with separate simple queries
+                actual_courses = session.run("MATCH (c:Course) RETURN count(c) as count").single()['count']
+                actual_users = session.run("MATCH (u:User) RETURN count(u) as count").single()['count']
+                actual_enrollments = session.run("MATCH ()-[r:ENROLLED_IN]->() RETURN count(r) as count").single()['count']
+
+                SystemLogger.info("Neo4j graph validation after initialization", {
+                    'actual_courses_in_graph': actual_courses,
+                    'actual_users_in_graph': actual_users,
+                    'actual_enrollments_in_graph': actual_enrollments,
+                    'expected_courses': len(unique_courses),
+                    'expected_users': len(sample_enrollments) if sample_enrollments else 0
+                })
+
+                if actual_enrollments == 0 and len(sample_enrollments) > 0:
+                    SystemLogger.error("No enrollment relationships created during initialization")
+                elif actual_enrollments > 0:
+                    SystemLogger.info(f"Successfully created {actual_enrollments} ENROLLED_IN relationships")
+
+                SystemLogger.info("Neo4j course data initialization completed", {
+                    'courses_attempted': len(unique_courses),
+                    'enrollments_attempted': len(sample_enrollments)
+                })
+
+        except Exception as e:
+            SystemLogger.error(
+                "Failed to initialize Neo4j course data",
+                exception=e,
+                context={'mysql_data_available': courses is not None}
+            )
+            raise DatabaseQueryError(f"Failed to initialize course data: {e}")
 
 

@@ -192,8 +192,8 @@ except Exception as e:
 # Model configuration (now configurable via env)
 try:
     COHERE_EMBED_MODEL = os.getenv('COHERE_EMBED_MODEL', 'embed-english-v3.0')
-    COHERE_GENERATE_MODEL = os.getenv('COHERE_GENERATE_MODEL', 'command-r-plus')
-    COHERE_CHAT_MODEL = os.getenv('COHERE_CHAT_MODEL', 'command-r')
+    COHERE_GENERATE_MODEL = os.getenv('COHERE_GENERATE_MODEL', 'command-r-08-2024')
+    COHERE_CHAT_MODEL = os.getenv('COHERE_CHAT_MODEL', 'command-r-08-2024')
     EMBEDDING_MODEL_NAME = os.getenv('EMBEDDING_MODEL_NAME', 'all-MiniLM-L6-v2')
     
     # Validate model names are not empty
@@ -362,7 +362,37 @@ def get_neo4j_connection():
             SystemLogger.debug("Creating new Neo4j connector instance")
             from database.neo4j_connector import Neo4jConnector
             _neo4j_connector = Neo4jConnector()
-            
+
+            # Check if graph is empty or incomplete and initialize with course data if needed
+            try:
+                with _neo4j_connector.driver.session() as session:
+                    # Check courses count
+                    result = session.run("MATCH (c:Course) RETURN count(c) as course_count")
+                    course_record = result.single()
+                    course_count = course_record["course_count"] if course_record else 0
+
+                    # Check enrollment count separately
+                    result = session.run("MATCH ()-[r:ENROLLED_IN]->() RETURN count(r) as enrollment_count")
+                    enrollment_record = result.single()
+                    enrollment_count = enrollment_record["enrollment_count"] if enrollment_record else 0
+
+                    if course_count == 0 or enrollment_count == 0:
+                        SystemLogger.info(f"Neo4j graph needs initialization (courses: {course_count}, enrollments: {enrollment_count})")
+
+                        # Clear any incomplete data first
+                        session.run("MATCH (n) DETACH DELETE n")
+                        SystemLogger.info("Cleared existing Neo4j data")
+
+                        mysql_connector = get_mysql_connection()
+                        _neo4j_connector.initialize_course_data(mysql_connector)
+                    else:
+                        SystemLogger.info(f"Neo4j graph already initialized (courses: {course_count}, enrollments: {enrollment_count})")
+            except Exception as init_error:
+                SystemLogger.info(
+                    "Failed to initialize course data in Neo4j - will continue without graph data",
+                    context={'error': str(init_error)}
+                )
+
             SystemLogger.info("Neo4j connector singleton created successfully", {
                 'uri': neo4j_uri,
                 'user': neo4j_user
