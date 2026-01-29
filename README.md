@@ -26,7 +26,7 @@ This agent implements multi-modal document parsing (PDF/DOCX formats), real-time
 
 The Collaborative Agent implements graph-based similarity analysis for peer-driven intelligence generation using Neo4j's native graph processing capabilities:
 
-![Collaborative Filtering-Based Recommendation Agent](docs/flow_diagrams/Collaborative_Filtering_Agent_Flow.jpg)
+![Collaborative Filtering-Based Recommendation Agent](docs/flow_diagrams/Collaborative_Filtering_Agent_Flow.png)
 
 This agent constructs high-dimensional user embeddings (1024-dimensional vectors) from multi-faceted profile data, executing graph traversal algorithms to identify similarity clusters and behavioral patterns. The implementation demonstrates production-grade collaborative filtering through graph databases, leveraging node similarity algorithms, community detection, and path-finding operations to extract intelligence from peer interaction networks and historical success patterns.
 
